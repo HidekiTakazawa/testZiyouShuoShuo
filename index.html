@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>🐼 ht自由说中文 - Speak Chinese Freely!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/pinyin-pro"></script>
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 1em;
+      background-size: contain;
+      background-position: center;
+      background-attachment: fixed;
+      position: relative;
+      color: #333;
+      margin: 0;
+      background-repeat: no-repeat;
+    }
+
+    /* 背景画像を薄くするためのオーバーレイ */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.6); /* 白色の半透明レイヤーの透明度を調整 */
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 2em;
+      background-color: transparent; /* パンダ画像を透過させるため */
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      position: relative; /* ::after擬似要素の基準位置 */
+      z-index: 1; /* コンテンツが::afterの上に表示されるように */
+    }
+
+    /* コンテナ内部に薄いパンダ画像を表示するためのオーバーレイ */
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.6); /* 白色の半透明レイヤーの透明度を調整 */
+      z-index: -1; /* コンテナのコンテンツの背面に配置 */
+      border-radius: 15px; /* コンテナの角丸に合わせる */
+    }
+
+    h2, h3 {
+      font-size: 1.8em;
+      text-align: center;
+    }
+
+    h2 {
+      color: rgb(0, 128, 122);
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    h3 {
+      margin-top: 1em;
+      font-size: 1.2em;
+      color: #555;
+      font-weight: 400;
+    }
+
+    .controls {
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+
+    button {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin-right: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .result-item .chinese {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .result-item .pinyin {
+      font-size: 18px;
+      color: #555;
+      margin: 5px 0;
+    }
+
+    #show_progress {
+      width: 90%;
+      font-size: 18px;
+      color: #888;
+    }
+    
+    #start_btn {
+      background-color: #28a745;
+      color: white;
+    }
+    #start_btn:hover:not(:disabled) {
+      background-color: #218838;
+      transform: translateY(-2px);
+    }
+
+    #stop_btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    #stop_btn:hover:not(:disabled) {
+      background-color: #c82333;
+      transform: translateY(-2px);
+    }
+
+    #copy_btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      vertical-align: middle;
+      box-shadow: none;
+    }
+    #copy_btn svg {
+      width: 32px;
+      height: 32px;
+      fill: #6c757d;
+      transition: fill 0.2s ease;
+    }
+    #copy_btn:hover svg {
+      fill: #007bff;
+    }
+    #copy_message {
+      color: #28a745;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    #show_result .result-item {
+      background-color: #fff;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>自由说中文</h2>
+    <h3>☞[start]を押して発音すると簡体字・ピンインに変換します</h3>
+    <h3>終了する時は[stop]を押してください</h3>
+    <div class="controls">
+      <button id="start_btn">start</button>
+      <button id="stop_btn" disabled>stop</button>
+      <button id="copy_btn" title="履歴をクリップボードにコピーする">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+      </button>
+      <span id="copy_message"></span>
+    </div>
+    <small id="status"></small>
+    <h3>認識中のテキスト</h3>
+    <textarea id="show_progress" cols="100" rows="1" readonly></textarea>
+    <h3>変換結果
+    </h3>
+    <div id="show_result"></div>
+  </div>
+</body>
+
+<script>
+  // --- ★デザイン変更：背景画像をランダムに設定 ---
+  document.addEventListener('DOMContentLoaded', function() {
+    const pandas = [
+      'images/パンダ1.png',
+      'images/パンダ2.png',
+      'images/パンダ3.png',
+      'images/パンダ4.png',
+      'images/パンダ5.png'
+    ];
+    const randomIndex = Math.floor(Math.random() * pandas.length);
+    document.body.style.backgroundImage = `url('${pandas[randomIndex]}')`;
+  });
+  let recognition = null;
+    let isRecording = false;
+  // --- ★デザイン変更ここまで ---
+
+  // Ensure browser compatibility for the SpeechRecognition API
+  window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (window.SpeechRecognition) {
+    recognition = new SpeechRecognition();
+
+    // Web Speech API Configuration
+    
+    
+        recognition.lang = 'zh-CN';
+        recognition.interimResults = false;
+        recognition.onend = () => { isRecording = false; };
+        recognition.onerror = (e) => { alert("マイクエラー: " + e.error); isRecording = false; 
+  }
+
+    // Get DOM elements
+    const startBtn = document.getElementById('start_btn');
+    const stopBtn = document.getElementById('stop_btn');
+    const copyBtn = document.getElementById('copy_btn');
+    const copyMessage = document.getElementById('copy_message');
+    const progressTextarea = document.getElementById('show_progress');
+    const resultDiv = document.getElementById('show_result');
+    const statusSpan = document.getElementById('status');
+
+    
+
+    startBtn.addEventListener('click', function () {
+      // recognition.start();
+      // this.disabled = true;
+      // stopBtn.disabled = false;
+      // statusSpan.textContent = "マイクに話しかけてください...";
+      if (isRecording) { recognition.stop(); return; }
+      if (!recognition) { alert("お使いのブラウザは音声認識に対応していません。"); return; }
+     
+      isRecording = true;
+      // updatePracticeBtn(true);
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        evaluate(transcript);
+        isRecording = false;
+      };
+      recognition.start();
+    });
+    function evaluate(transcript) {
+      // ピンインに変換
+            // const pinyin = pinyinUtil.getPinyin(transcript, ' ', true, true, true);
+            const pinyin = pinyinPro.pinyin(transcript, { toneType: 'symbol' });
+            // 表示用の要素を作成
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+ 
+            const chineseP = document.createElement('p');
+            chineseP.className = 'chinese';
+            chineseP.textContent = transcript;
+ 
+            const pinyinP = document.createElement('p');
+            pinyinP.className = 'pinyin';
+            pinyinP.textContent = pinyin;
+ 
+            resultItem.appendChild(chineseP);
+            resultItem.appendChild(pinyinP);
+            // 新しい結果を一番上に表示
+            resultDiv.prepend(resultItem);
+    }
+
+    stopBtn.addEventListener('click', function () {
+      recognition.stop();
+      
+      this.disabled = true;
+      startBtn.disabled = false;
+      progressTextarea.value = '';
+      statusSpan.textContent = "停止しました。";
+    });
+
+    // --- ★変更点：コピーボタンの処理 ---
+    copyBtn.addEventListener('click', function() {
+      // 履歴表示エリアからすべての結果アイテムを取得
+      const resultItems = resultDiv.querySelectorAll('.result-item');
+      
+      // 履歴が空の場合はアラートを表示して処理を終了
+      if (resultItems.length === 0) {
+        alert('コピーする履歴がありません。');
+        return;
+      }
+
+      let historyText = '';
+      resultItems.forEach(item => {
+        const chinese = item.querySelector('.chinese').textContent;
+        const pinyin = item.querySelector('.pinyin').textContent;
+        // 「簡体字(改行)ピンイン(改行)(改行)」の形式でテキストを結合
+        historyText += `${chinese}\n${pinyin}\n\n`;
+      });
+
+      // 整形したテキストをクリップボードにコピー
+      navigator.clipboard.writeText(historyText.trim()).then(() => {
+        copyMessage.textContent = 'コピーしました！';
+        this.disabled = true; // 連打防止
+        
+        setTimeout(() => {
+          copyMessage.textContent = '';
+          this.disabled = false;
+        }, 1500);
+      }).catch(err => {
+        console.error('クリップボードへのコピーに失敗しました: ', err);
+        alert('コピーに失敗しました。');
+      });
+    });
+    // --- ★変更点ここまで ---
+
+    // 認識が（エラーや無音などで）終了した際に自動で再開するためのイベント
+    recognition.onend = function () {
+      // ユーザーが手動でstopボタンを押していない場合のみ再開する
+      if (!stopBtn.disabled) {
+        recognition.start();
+      }
+    };
+
+    let lastFinalTranscript = ''; // 最後に確定したテキストを保存する変数
+
+    recognition.onresult = function (event) {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          // 最終結果が前回と異なり、かつ空でない場合のみ処理
+          if (transcript.trim() && transcript !== lastFinalTranscript) {
+            lastFinalTranscript = transcript; // 今回の結果を保存
+
+            // ピンインに変換
+            const pinyin = pinyinUtil.getPinyin(transcript, ' ', true, true, true);
+
+            // 表示用の要素を作成
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+ 
+            const chineseP = document.createElement('p');
+            chineseP.className = 'chinese';
+            chineseP.textContent = transcript;
+ 
+            const pinyinP = document.createElement('p');
+            pinyinP.className = 'pinyin';
+            pinyinP.textContent = pinyin;
+ 
+            resultItem.appendChild(chineseP);
+            resultItem.appendChild(pinyinP);
+            // 新しい結果を一番上に表示
+            resultDiv.prepend(resultItem);
+          }
+          // 途中結果表示をクリア
+          progressTextarea.value = '';
+          interimTranscript = '';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      progressTextarea.value = interimTranscript;
+    }
+  } else {
+    document.body.innerHTML = "<div class='container'><h2>お使いのブラウザはWeb Speech APIに対応していません。Google Chromeをお試しください。</h2></div>";
+  }
+</script>
+
+</html>
