@@ -169,10 +169,10 @@
   <div class="container">
     <h2>自由说中文</h2>
     <h3>☞[start]を押して発音すると簡体字・ピンインに変換します</h3>
-    <h3>終了する時は[stop]を押してください</h3>
+    
     <div class="controls">
       <button id="start_btn">start</button>
-      <button id="stop_btn" disabled>stop</button>
+      
       <button id="copy_btn" title="履歴をクリップボードにコピーする">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
       </button>
@@ -220,7 +220,7 @@
 
     // Get DOM elements
     const startBtn = document.getElementById('start_btn');
-    const stopBtn = document.getElementById('stop_btn');
+    
     const copyBtn = document.getElementById('copy_btn');
     const copyMessage = document.getElementById('copy_message');
     const progressTextarea = document.getElementById('show_progress');
@@ -233,17 +233,19 @@
       // recognition.start();
       // this.disabled = true;
       // stopBtn.disabled = false;
-      // statusSpan.textContent = "マイクに話しかけてください...";
+      statusSpan.textContent = "マイクに話しかけてください...";
       if (isRecording) { recognition.stop(); return; }
       if (!recognition) { alert("お使いのブラウザは音声認識に対応していません。"); return; }
      
       isRecording = true;
       // updatePracticeBtn(true);
-
+      startBtn.textContent = 'レコード中';
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         evaluate(transcript);
         isRecording = false;
+        startBtn.textContent = 'start';
+        statusSpan.textContent = " ";
       };
       recognition.start();
     });
@@ -269,14 +271,7 @@
             resultDiv.prepend(resultItem);
     }
 
-    stopBtn.addEventListener('click', function () {
-      recognition.stop();
-      
-      this.disabled = true;
-      startBtn.disabled = false;
-      progressTextarea.value = '';
-      statusSpan.textContent = "停止しました。";
-    });
+    
 
     // --- ★変更点：コピーボタンの処理 ---
     copyBtn.addEventListener('click', function() {
@@ -314,53 +309,52 @@
     // --- ★変更点ここまで ---
 
     // 認識が（エラーや無音などで）終了した際に自動で再開するためのイベント
-    recognition.onend = function () {
-      // ユーザーが手動でstopボタンを押していない場合のみ再開する
-      if (!stopBtn.disabled) {
-        recognition.start();
-      }
-    };
+  //   recognition.onend = function () {
+      
+  //       recognition.start();
+      
+  //   };
 
-    let lastFinalTranscript = ''; // 最後に確定したテキストを保存する変数
+  //   let lastFinalTranscript = ''; // 最後に確定したテキストを保存する変数
 
-    recognition.onresult = function (event) {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          // 最終結果が前回と異なり、かつ空でない場合のみ処理
-          if (transcript.trim() && transcript !== lastFinalTranscript) {
-            lastFinalTranscript = transcript; // 今回の結果を保存
+  //   recognition.onresult = function (event) {
+  //     let interimTranscript = '';
+  //     for (let i = event.resultIndex; i < event.results.length; ++i) {
+  //       const transcript = event.results[i][0].transcript;
+  //       if (event.results[i].isFinal) {
+  //         // 最終結果が前回と異なり、かつ空でない場合のみ処理
+  //         if (transcript.trim() && transcript !== lastFinalTranscript) {
+  //           lastFinalTranscript = transcript; // 今回の結果を保存
 
-            // ピンインに変換
-            const pinyin = pinyinUtil.getPinyin(transcript, ' ', true, true, true);
+  //           // ピンインに変換
+  //           const pinyin = pinyinUtil.getPinyin(transcript, ' ', true, true, true);
 
-            // 表示用の要素を作成
-            const resultItem = document.createElement('div');
-            resultItem.className = 'result-item';
+  //           // 表示用の要素を作成
+  //           const resultItem = document.createElement('div');
+  //           resultItem.className = 'result-item';
  
-            const chineseP = document.createElement('p');
-            chineseP.className = 'chinese';
-            chineseP.textContent = transcript;
+  //           const chineseP = document.createElement('p');
+  //           chineseP.className = 'chinese';
+  //           chineseP.textContent = transcript;
  
-            const pinyinP = document.createElement('p');
-            pinyinP.className = 'pinyin';
-            pinyinP.textContent = pinyin;
+  //           const pinyinP = document.createElement('p');
+  //           pinyinP.className = 'pinyin';
+  //           pinyinP.textContent = pinyin;
  
-            resultItem.appendChild(chineseP);
-            resultItem.appendChild(pinyinP);
-            // 新しい結果を一番上に表示
-            resultDiv.prepend(resultItem);
-          }
-          // 途中結果表示をクリア
-          progressTextarea.value = '';
-          interimTranscript = '';
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-      progressTextarea.value = interimTranscript;
-    }
+  //           resultItem.appendChild(chineseP);
+  //           resultItem.appendChild(pinyinP);
+  //           // 新しい結果を一番上に表示
+  //           resultDiv.prepend(resultItem);
+  //         }
+  //         // 途中結果表示をクリア
+  //         progressTextarea.value = '';
+  //         interimTranscript = '';
+  //       } else {
+  //         interimTranscript += transcript;
+  //       }
+  //     }
+  //     progressTextarea.value = interimTranscript;
+  //   }
   } else {
     document.body.innerHTML = "<div class='container'><h2>お使いのブラウザはWeb Speech APIに対応していません。Google Chromeをお試しください。</h2></div>";
   }
